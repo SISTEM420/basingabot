@@ -25,28 +25,28 @@ async def votekick(ctx, *, member: discord.Member):
     members = v_channel.members
     memids = []
     
-    for member in members:
-        memids.append(member.id)
+    for mem in members:
+        memids.append(mem.id)
         
     view = VoteButtons(ctx)
     await ctx.reply(f"{ctx.message.author} wants to kick {member}", view=view)
 
-    print(len(memids))
-    print(len(memids)/2)
-
-
     #TODO fix this while, cos view.value never gets to False in the function on_timeout()
-    while view.value:
+    print(f"value: {view.value}")
+    print(f"started: {view.started}")
+    while view.value and view.started == True:
         print(view.value)
-        if positive_votes >= len(memids)/2:
+        if positive_votes >= len(memids)/2:     
             await member.move_to(channel = None, reason = "Votekick")
             await ctx.send(f"{member} was kicked.")
             view.value = False
-        elif negative_votes >= len(memids)/2:
+        elif negative_votes > len(memids)/2:
             await ctx.send(f"{member} wasn't kicked.")
             view.value = False
+            break
     if not view.value and positive_votes < len(memids/2):
         await ctx.send(f"{member} wasn't kicked.")
+        
 
 
 class VoteButtons(discord.ui.View):
@@ -55,11 +55,13 @@ class VoteButtons(discord.ui.View):
         super().__init__(timeout=5)
         self.ctx = ctx
         self.value = True
+        self.started = False
 
     @discord.ui.button(label="KICK", style=discord.ButtonStyle.green, emoji="👍")
     async def positive_vote(self,interaction: discord.Interaction, button:discord.ui.Button):
         global positive_votes
         positive_votes += 1
+        self.started = True
         button.label = str(positive_votes)
         embed = discord.Embed(color= discord.Color.random())
         embed.set_author(name= "You voted:")
@@ -71,6 +73,7 @@ class VoteButtons(discord.ui.View):
     async def negative_vote(self, interaction: discord.Interaction, button:discord.ui.Button):
         global negative_votes
         negative_votes += 1
+        self.started = True
         button.label = str(negative_votes)
         embed = discord.Embed(color= discord.Color.random())
         embed.set_author(name= "You voted: ")
@@ -78,8 +81,9 @@ class VoteButtons(discord.ui.View):
         await interaction.response.send_message(embed=embed, ephemeral = True)
 
     async def on_timeout(self):
+        print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
         self.value = False
-        self.stop
+        self.stop()
 
 @client.event
 async def on_ready():
