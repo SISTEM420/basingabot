@@ -20,28 +20,6 @@ client = commands.Bot(command_prefix = '&', intents=intents)
 negative_votes = 0
 positive_votes = 0
 
-@client.command()
-async def vtk(ctx, *, member: discord.Member):
-    channel_id = ctx.message.author.voice.channel.id
-    v_channel = client.get_channel(channel_id) 
-    members = v_channel.members
-    memids = []
-    
-    for mem in members:
-        memids.append(mem.id)
-        
-    view = VoteButtons(ctx)
-    await ctx.reply(f"{ctx.message.author} wants to kick {member}", view=view)
-
-    await view.wait()
-
-    if positive_votes >= len(memids) / 2:
-        await member.move_to(channel=None, reason="Votekick")
-        await ctx.send(f"{member} was kicked.")
-    else:
-        await ctx.send(f"{member} wasn't kicked.")
-        
-
 class VoteButtons(discord.ui.View):
 
     def __init__(self, ctx):
@@ -82,9 +60,17 @@ class VoteButtons(discord.ui.View):
 
 @client.event
 async def on_ready():
-    print("bot ready to cum!")
+    print("The bot is ready!")
     print("-----------------")
 
+@client.command()
+async def fishreact(ctx):
+    fishes = ('🐟', '🎣', '🐠', '🐡', '🦈', '🐬', '🐳', '🐋', '🦐', '🦑', '🐙')
+
+    target_id = ctx.message.reference.message_id
+    target_message = await ctx.fetch_message(target_id)
+    for fish in fishes:
+        await target_message.add_reaction(fish)
 
 @client.command()
 async def bazinga(ctx):
@@ -112,6 +98,27 @@ async def prueba(ctx):
     view = VoteButtons()
     await ctx.reply("Vota:", view=view)
 
+@client.command()
+async def vtk(ctx, *, member: discord.Member):
+    channel_id = ctx.message.author.voice.channel.id
+    v_channel = client.get_channel(channel_id) 
+    members = v_channel.members
+    memids = []
+    
+    for mem in members:
+        memids.append(mem.id)
+        
+    view = VoteButtons(ctx)
+    await ctx.reply(f"{ctx.message.author} wants to kick {member}", view=view)
+
+    await view.wait()
+
+    if positive_votes >= len(memids) / 2:
+        await member.move_to(channel=None, reason="Votekick")
+        await ctx.send(f"{member} was kicked.")
+    else:
+        await ctx.send(f"{member} wasn't kicked.")
+        
 
 client.run(BOTTOKEN)
 
