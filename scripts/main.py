@@ -1,8 +1,6 @@
 #Basinga bot 
 #Made by Arturo Jorge
-#Version: 1.1.0
-
-#TODO add a fish react function
+#Version: 1.2.0
 
 import discord
 import asyncio
