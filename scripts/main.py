@@ -56,7 +56,39 @@ class VoteButtons(discord.ui.View):
         self.stop()
 
     async def wait(self):
-        await self.votes_event.wait()
+        global positive_votes
+        global negative_votes
+        if positive_votes >= len(memids)/2 or negative_votes > len(memids)/2:
+            await self.votes_event.wait()
+
+
+@client.command()
+async def vtk(ctx, *, member: discord.Member):
+    global negative_votes
+    global positive_votes
+    negative_votes = 0
+    positive_votes = 0
+    channel_id = ctx.message.author.voice.channel.id
+    v_channel = client.get_channel(channel_id) 
+    members = v_channel.members
+    global memids
+    memids = []
+    
+    for mem in members:
+        memids.append(mem.id)
+        
+    view = VoteButtons(ctx)
+    await ctx.reply(f"{ctx.message.author} wants to kick {member}", view=view)
+
+
+    await view.wait()
+    
+    if positive_votes >= len(memids) / 2:
+        await member.move_to(channel=None, reason="Votekick")
+        await ctx.send(f"{member} was kicked.")
+    else:
+        await ctx.send(f"{member} wasn't kicked.")
+
 
 @client.event
 async def on_ready():
@@ -98,26 +130,7 @@ async def prueba(ctx):
     view = VoteButtons()
     await ctx.reply("Vota:", view=view)
 
-@client.command()
-async def vtk(ctx, *, member: discord.Member):
-    channel_id = ctx.message.author.voice.channel.id
-    v_channel = client.get_channel(channel_id) 
-    members = v_channel.members
-    memids = []
-    
-    for mem in members:
-        memids.append(mem.id)
-        
-    view = VoteButtons(ctx)
-    await ctx.reply(f"{ctx.message.author} wants to kick {member}", view=view)
 
-    await view.wait()
-
-    if positive_votes >= len(memids) / 2:
-        await member.move_to(channel=None, reason="Votekick")
-        await ctx.send(f"{member} was kicked.")
-    else:
-        await ctx.send(f"{member} wasn't kicked.")
         
 
 client.run(BOTTOKEN)
