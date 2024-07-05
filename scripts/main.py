@@ -1,6 +1,6 @@
 #Basinga bot 
 #Made by Arturo Jorge
-#Version: 1.0.0
+#Version: 1.1.0
 
 #TODO add a fish react function
 
@@ -21,7 +21,7 @@ negative_votes = 0
 positive_votes = 0
 
 @client.command()
-async def votekick(ctx, *, member: discord.Member):
+async def vtk(ctx, *, member: discord.Member):
     channel_id = ctx.message.author.voice.channel.id
     v_channel = client.get_channel(channel_id) 
     members = v_channel.members
@@ -45,7 +45,7 @@ async def votekick(ctx, *, member: discord.Member):
 class VoteButtons(discord.ui.View):
 
     def __init__(self, ctx):
-        super().__init__(timeout=10)
+        super().__init__(timeout=30)
         self.ctx = ctx
         self.value = True
         self.votes_event = asyncio.Event()
@@ -53,28 +53,27 @@ class VoteButtons(discord.ui.View):
     @discord.ui.button(label="KICK", style=discord.ButtonStyle.green, emoji="👍")
     async def positive_vote(self, interaction: discord.Interaction, button:discord.ui.Button):
         global positive_votes
+        global negative_votes
         positive_votes += 1
-        button.label = str(positive_votes)
         embed = discord.Embed(color= discord.Color.random())
-        embed.set_author(name= "You voted:")
-        embed.add_field(name="KICK", value="nice >:)")
-        await interaction.response.send_message(embed=embed, ephemeral = True)
+        embed.set_author(name= "Votes:")
+        embed.add_field(name=f"F1: {positive_votes} | F2: {negative_votes}", value="------------")
+        await interaction.response.edit_message(embed=embed)
         self.votes_event.set()
         
 
     @discord.ui.button(label="DON'T KICK", style=discord.ButtonStyle.red, emoji="👎")
     async def negative_vote(self, interaction: discord.Interaction, button:discord.ui.Button):
         global negative_votes
+        global positive_votes
         negative_votes += 1
-        button.label = str(negative_votes)
         embed = discord.Embed(color= discord.Color.random())
-        embed.set_author(name= "You voted: ")
-        embed.add_field(name="DON'T KICK", value="what a nice guy")
-        await interaction.response.send_message(embed=embed, ephemeral = True)
+        embed.set_author(name= "Votes:")
+        embed.add_field(name=f"F1: {positive_votes} | F2: {negative_votes}", value="------------")
+        await interaction.response.edit_message(embed=embed)
         self.votes_event.set()
 
     async def on_timeout(self):
-        print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
         self.value = False
         self.stop()
 
