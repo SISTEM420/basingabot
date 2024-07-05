@@ -19,6 +19,7 @@ client = commands.Bot(command_prefix = '&', intents=intents)
 
 negative_votes = 0
 positive_votes = 0
+memids = []
 
 class VoteButtons(discord.ui.View):
 
@@ -29,24 +30,23 @@ class VoteButtons(discord.ui.View):
         self.votes_event = asyncio.Event()
 
     @discord.ui.button(label="KICK", style=discord.ButtonStyle.green, emoji="👍")
-    async def positive_vote(self, interaction: discord.Interaction, button:discord.ui.Button):
+    async def positive_vote(self, interaction: discord.Interaction, button: discord.ui.Button):
         global positive_votes
         global negative_votes
         positive_votes += 1
-        embed = discord.Embed(color= discord.Color.random())
-        embed.set_author(name= "Votes:")
+        embed = discord.Embed(color=discord.Color.random())
+        embed.set_author(name="Votes:")
         embed.add_field(name=f"F1: {positive_votes} | F2: {negative_votes}", value="------------")
         await interaction.response.edit_message(embed=embed)
         self.votes_event.set()
-        
 
     @discord.ui.button(label="DON'T KICK", style=discord.ButtonStyle.red, emoji="👎")
-    async def negative_vote(self, interaction: discord.Interaction, button:discord.ui.Button):
+    async def negative_vote(self, interaction: discord.Interaction, button: discord.ui.Button):
         global negative_votes
         global positive_votes
         negative_votes += 1
-        embed = discord.Embed(color= discord.Color.random())
-        embed.set_author(name= "Votes:")
+        embed = discord.Embed(color=discord.Color.random())
+        embed.set_author(name="Votes:")
         embed.add_field(name=f"F1: {positive_votes} | F2: {negative_votes}", value="------------")
         await interaction.response.edit_message(embed=embed)
         self.votes_event.set()
@@ -58,37 +58,37 @@ class VoteButtons(discord.ui.View):
     async def wait(self):
         global positive_votes
         global negative_votes
-        if positive_votes >= len(memids)/2 or negative_votes > len(memids)/2:
+        while positive_votes < len(memids) / 2 and negative_votes <= len(memids) / 2:
             await self.votes_event.wait()
-
+            self.votes_event.clear()
 
 @client.command()
 async def vtk(ctx, *, member: discord.Member):
     global negative_votes
     global positive_votes
+    global memids
+
     negative_votes = 0
     positive_votes = 0
-    channel_id = ctx.message.author.voice.channel.id
-    v_channel = client.get_channel(channel_id) 
-    members = v_channel.members
-    global memids
     memids = []
-    
+
+    channel_id = ctx.message.author.voice.channel.id
+    v_channel = client.get_channel(channel_id)
+    members = v_channel.members
+
     for mem in members:
         memids.append(mem.id)
-        
+
     view = VoteButtons(ctx)
     await ctx.reply(f"{ctx.message.author} wants to kick {member}", view=view)
 
-
     await view.wait()
-    
+
     if positive_votes >= len(memids) / 2:
         await member.move_to(channel=None, reason="Votekick")
         await ctx.send(f"{member} was kicked.")
     else:
         await ctx.send(f"{member} wasn't kicked.")
-
 
 @client.event
 async def on_ready():
