@@ -1,6 +1,6 @@
 #Basinga bot 
 #Made by Arturo Jorge
-#Version: 1.2.0
+#Version: 1.2.1
 
 import discord
 import asyncio
@@ -99,8 +99,13 @@ async def fishreact(ctx):
 
     target_id = ctx.message.reference.message_id
     target_message = await ctx.fetch_message(target_id)
+    await ctx.message.delete()
+    with open('res/fish-react.gif', 'rb') as f:
+        picture = discord.File(f)
+        await ctx.send(file=picture)
     for fish in fishes:
         await target_message.add_reaction(fish)
+    
 
 @client.command()
 async def bazinga(ctx):
