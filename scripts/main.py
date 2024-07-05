@@ -1,23 +1,22 @@
 #Basinga bot 
 #Made by Arturo Jorge
-#Version: 1.2.1
+#Version: 1.3.1
 
 import discord
 import asyncio
-from discord import member
 from discord.ext import commands
 from constants import *
-
 
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
-client = commands.Bot(command_prefix = '&', intents=intents)
+client = commands.Bot(command_prefix='&', intents=intents)
 
 negative_votes = 0
 positive_votes = 0
 memids = []
+voted_users = set()  # Set to track users who have voted
 
 class VoteButtons(discord.ui.View):
 
@@ -31,6 +30,13 @@ class VoteButtons(discord.ui.View):
     async def positive_vote(self, interaction: discord.Interaction, button: discord.ui.Button):
         global positive_votes
         global negative_votes
+        user_id = interaction.user.id
+
+        if user_id in voted_users:
+            await interaction.response.send_message("You have already voted.", ephemeral=True)
+            return
+
+        voted_users.add(user_id)
         positive_votes += 1
         embed = discord.Embed(color=discord.Color.random())
         embed.set_author(name="Votes:")
@@ -42,6 +48,13 @@ class VoteButtons(discord.ui.View):
     async def negative_vote(self, interaction: discord.Interaction, button: discord.ui.Button):
         global negative_votes
         global positive_votes
+        user_id = interaction.user.id
+
+        if user_id in voted_users:
+            await interaction.response.send_message("You have already voted.", ephemeral=True)
+            return
+
+        voted_users.add(user_id)
         negative_votes += 1
         embed = discord.Embed(color=discord.Color.random())
         embed.set_author(name="Votes:")
@@ -65,10 +78,12 @@ async def vtk(ctx, *, member: discord.Member):
     global negative_votes
     global positive_votes
     global memids
+    global voted_users
 
     negative_votes = 0
     positive_votes = 0
     memids = []
+    voted_users = set()
 
     channel_id = ctx.message.author.voice.channel.id
     v_channel = client.get_channel(channel_id)
