@@ -5,9 +5,11 @@
 #TODO add a fish react function
 
 import discord
+import asyncio
 from discord import member
 from discord.ext import commands
 from constants import *
+
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -31,59 +33,53 @@ async def votekick(ctx, *, member: discord.Member):
     view = VoteButtons(ctx)
     await ctx.reply(f"{ctx.message.author} wants to kick {member}", view=view)
 
-    #TODO fix this while, cos view.value never gets to False in the function on_timeout()
-    print(f"value: {view.value}")
-    print(f"started: {view.started}")
-    while view.value and view.started == True:
-        print(view.value)
-        if positive_votes >= len(memids)/2:     
-            await member.move_to(channel = None, reason = "Votekick")
-            await ctx.send(f"{member} was kicked.")
-            view.value = False
-        elif negative_votes > len(memids)/2:
-            await ctx.send(f"{member} wasn't kicked.")
-            view.value = False
-            break
-    if not view.value and positive_votes < len(memids/2):
+    await view.wait()
+
+    if positive_votes >= len(memids) / 2:
+        await member.move_to(channel=None, reason="Votekick")
+        await ctx.send(f"{member} was kicked.")
+    else:
         await ctx.send(f"{member} wasn't kicked.")
         
-
 
 class VoteButtons(discord.ui.View):
 
     def __init__(self, ctx):
-        super().__init__(timeout=5)
+        super().__init__(timeout=10)
         self.ctx = ctx
         self.value = True
-        self.started = False
+        self.votes_event = asyncio.Event()
 
     @discord.ui.button(label="KICK", style=discord.ButtonStyle.green, emoji="👍")
-    async def positive_vote(self,interaction: discord.Interaction, button:discord.ui.Button):
+    async def positive_vote(self, interaction: discord.Interaction, button:discord.ui.Button):
         global positive_votes
         positive_votes += 1
-        self.started = True
         button.label = str(positive_votes)
         embed = discord.Embed(color= discord.Color.random())
         embed.set_author(name= "You voted:")
         embed.add_field(name="KICK", value="nice >:)")
         await interaction.response.send_message(embed=embed, ephemeral = True)
+        self.votes_event.set()
         
 
     @discord.ui.button(label="DON'T KICK", style=discord.ButtonStyle.red, emoji="👎")
     async def negative_vote(self, interaction: discord.Interaction, button:discord.ui.Button):
         global negative_votes
         negative_votes += 1
-        self.started = True
         button.label = str(negative_votes)
         embed = discord.Embed(color= discord.Color.random())
         embed.set_author(name= "You voted: ")
         embed.add_field(name="DON'T KICK", value="what a nice guy")
         await interaction.response.send_message(embed=embed, ephemeral = True)
+        self.votes_event.set()
 
     async def on_timeout(self):
         print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
         self.value = False
         self.stop()
+
+    async def wait(self):
+        await self.votes_event.wait()
 
 @client.event
 async def on_ready():
